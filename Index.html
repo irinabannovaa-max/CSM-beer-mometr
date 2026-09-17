@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSM BeerMeter 🍺</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;
+background:#0f172a;
+color:white;
+padding:24px;
+}
+.container{max-width:920px;margin:auto;}
+.hero{text-align:center;margin-bottom:32px;}
+.hero h1{font-size:42px;margin:10px 0;}
+.hero p{color:#94a3b8;}
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+.card{
+background:#1e293b;
+border-radius:22px;
+padding:24px;
+box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+h2{margin-top:0;}
+label{display:block;margin-top:8px;margin-bottom:6px;color:#cbd5e1;}
+select,textarea{
+width:100%;
+padding:14px;
+border-radius:12px;
+border:none;
+background:#334155;
+color:white;
+margin-bottom:16px;
+font-size:15px;
+}
+button{
+width:100%;
+padding:16px;
+border:none;
+border-radius:14px;
+background:#f59e0b;
+color:#111827;
+font-size:17px;
+font-weight:700;
+cursor:pointer;
+transition:.2s;
+}
+button:hover{transform:translateY(-1px);}
+.leader-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:12px 0;
+border-bottom:1px solid rgba(255,255,255,.08);
+}
+.feed{margin-top:28px;}
+.cheer{
+background:#1e293b;
+padding:16px;
+border-radius:16px;
+margin-bottom:12px;
+}
+.small{font-size:13px;color:#94a3b8;}
+.confetti{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+pointer-events:none;
+overflow:hidden;
+}
+.beer{
+position:absolute;
+font-size:26px;
+animation:fall 2s linear forwards;
+}
+@keyframes fall{
+from{transform:translateY(-40px) rotate(0);opacity:1;}
+to{transform:translateY(110vh) rotate(360deg);opacity:0;}
+}
+@media(max-width:720px){
+.grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="hero">
+<div style="font-size:56px;">🍺</div>
+<h1>CSM BeerMeter</h1>
+<p>Celebrate wins • One beer at a time 🍻</p>
+</div>
+
+<div class="grid">
+
+<div class="card">
+<h2>Give a Beer</h2>
+
+<label>From</label>
+<select id="giver">
+<option>JD</option>
+<option>Arjan</option>
+<option>Iryna</option>
+<option>Ana</option>
+</select>
+
+<label>To</label>
+<select id="receiver">
+<option>JD</option>
+<option>Arjan</option>
+<option>Iryna</option>
+<option>Ana</option>
+</select>
+
+<label>Why?</label>
+<textarea id="reason" rows="3"
+placeholder="Saved a renewal, jumped into an escalation, helped with onboarding..."></textarea>
+
+<button onclick="giveBeer()">🍻 Cheers!</button>
+<p class="small">Unlimited beers. Just no self-awards 😉</p>
+</div>
+
+<div class="card">
+<h2>Leaderboard</h2>
+<div id="leaderboard"></div>
+</div>
+
+</div>
+
+<div class="feed">
+<h2>Wall of Cheers</h2>
+<div id="feed"></div>
+</div>
+
+</div>
+
+<div id="confetti" class="confetti"></div>
+
+<script>
+
+const defaultScores={
+JD:0,
+Arjan:0,
+Iryna:0,
+Ana:0
+};
+
+let scores=JSON.parse(localStorage.getItem("beerScores"))||defaultScores;
+let cheers=JSON.parse(localStorage.getItem("beerCheers"))||[];
+
+function saveData(){
+localStorage.setItem("beerScores",JSON.stringify(scores));
+localStorage.setItem("beerCheers",JSON.stringify(cheers));
+}
+
+function beerIcons(count){
+return "🍺".repeat(Math.min(count,10)) + (count>10?` +${count-10}`:"");
+}
+
+function renderLeaderboard(){
+
+const board=document.getElementById("leaderboard");
+board.innerHTML="";
+
+Object.entries(scores)
+.sort((a,b)=>b[1]-a[1])
+.forEach(([name,count],i)=>{
+
+const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+
+board.innerHTML+=`
+<div class="leader-row">
+<div><strong>${medal} ${name}</strong></div>
+<div style="text-align:right">
+<div>${beerIcons(count)}</div>
+<div class="small">${count} beers</div>
+</div>
+</div>`;
+});
+}
+
+function renderFeed(){
+
+const feed=document.getElementById("feed");
+feed.innerHTML="";
+
+if(cheers.length===0){
+feed.innerHTML='<div class="cheer">No beers yet. Someone deserves the first one! 🍺</div>';
+return;
+}
+
+cheers.slice().reverse().forEach(item=>{
+
+feed.innerHTML+=`
+<div class="cheer">
+<strong>${item.giver} → 🍺 ${item.receiver}</strong><br>
+${item.reason}
+</div>`;
+});
+}
+
+function launchConfetti(){
+
+const c=document.getElementById("confetti");
+
+for(let i=0;i<18;i++){
+
+const e=document.createElement("div");
+e.className="beer";
+e.textContent=Math.random()>.5?"🍺":"✨";
+e.style.left=Math.random()*100+"vw";
+e.style.animationDelay=Math.random()*.4+"s";
+
+c.appendChild(e);
+
+setTimeout(()=>e.remove(),2200);
+}
+}
+
+function giveBeer(){
+
+const giver=document.getElementById("giver").value;
+const receiver=document.getElementById("receiver").value;
+const reason=document.getElementById("reason").value.trim()||"For being awesome.";
+
+if(giver===receiver){
+alert("Nice try 😄 You can't give yourself a beer.");
+return;
+}
+
+scores[receiver]++;
+cheers.push({giver,receiver,reason});
+
+saveData();
+
+document.getElementById("reason").value="";
+
+renderLeaderboard();
+renderFeed();
+launchConfetti();
+}
+
+renderLeaderboard();
+renderFeed();
+
+</script>
+
+</body>
+</html>
