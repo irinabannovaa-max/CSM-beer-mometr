@@ -216,16 +216,24 @@ let cheers = [];
    Load votes from Google
    ------------------------- */
 
-async function loadVotes(){
+function loadVotes(){
 
-try{
+return new Promise((resolve, reject) => {
 
-const response = await fetch(API_URL);
+const callbackName =
+"beerMeterCallback_" + Date.now();
 
-const data = await response.json();
+window[callbackName] = function(data){
+
+delete window[callbackName];
+script.remove();
+
+try {
 
 if(!Array.isArray(data) || data.length < 2){
+
 cheers = [];
+
 }else{
 
 cheers = data.slice(1).map(row => ({
@@ -239,16 +247,43 @@ reason: row[2]
 renderLeaderboard();
 renderFeed();
 
-}catch(error){
+resolve();
 
-console.error("Could not load votes:", error);
+} catch(error){
+
+reject(error);
+
+}
+
+};
+
+const script = document.createElement("script");
+
+script.src =
+API_URL +
+"?callback=" +
+callbackName;
+
+script.onerror = function(){
+
+delete window[callbackName];
+script.remove();
+
+console.error("Could not load votes.");
 
 document.getElementById("leaderboard").innerHTML =
 "<p>Could not load results.</p>";
 
 document.getElementById("feed").innerHTML =
 "<p>Could not load cheers.</p>";
-}
+
+reject(new Error("Could not load votes"));
+
+};
+
+document.body.appendChild(script);
+
+});
 
 }
 
